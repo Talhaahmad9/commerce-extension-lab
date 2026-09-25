@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Commerce Extension Lab",
+  "version": "0.1.0",
+  "description": "A learning extension for generic ecommerce pages.",
+  "minimum_chrome_version": "114",
+  "permissions": ["sidePanel"],
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://example.com/*",
+        "https://testingurl.dev/scraping/ecommerce/product/*",
+        "https://testingurl.dev/scraping/structured-data/product-microdata"
+      ],
+      "js": ["content.js"]
+    }
+  ]
+}
