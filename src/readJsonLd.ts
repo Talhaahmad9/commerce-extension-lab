@@ -24,18 +24,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function hasType(node: Record<string, unknown>, type: string): boolean {
+  const types = node["@type"];
+
+  return types === type || (Array.isArray(types) && types.includes(type));
+}
+
 export function findProductNode(
   values: unknown[],
+  pageUrl?: string,
 ): Record<string, unknown> | null {
   const pending: unknown[] = [...values];
+  const products: Record<string, unknown>[] = [];
+  const groups: Record<string, unknown>[] = [];
 
   while (pending.length > 0) {
     const value = pending.shift();
 
     if (Array.isArray(value)) {
-      for (const item of value) {
-        pending.push(item);
-      }
+      pending.push(...value);
       continue;
     }
 
@@ -43,13 +50,12 @@ export function findProductNode(
       continue;
     }
 
-    const types = value["@type"];
+    if (hasType(value, "Product")) {
+      products.push(value);
+    }
 
-    if (
-      types === "Product" ||
-      (Array.isArray(types) && types.includes("Product"))
-    ) {
-      return value;
+    if (hasType(value, "ProductGroup")) {
+      groups.push(value);
     }
 
     if ("@graph" in value) {
@@ -57,5 +63,28 @@ export function findProductNode(
     }
   }
 
-  return null;
+  if (pageUrl) {
+    const skuId = new URL(pageUrl).searchParams.get("skuId");
+
+    if (skuId) {
+      for (const group of groups) {
+        const rawVariants = group["hasVariant"];
+        const variants = Array.isArray(rawVariants)
+          ? rawVariants
+          : [rawVariants];
+
+        for (const variant of variants) {
+          if (
+            isRecord(variant) &&
+            hasType(variant, "Product") &&
+            variant["sku"] === skuId
+          ) {
+            return variant;
+          }
+        }
+      }
+    }
+  }
+
+  return products[0] ?? null;
 }

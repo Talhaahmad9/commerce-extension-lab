@@ -5,6 +5,9 @@ export interface JsonLdProductData {
   imageUrl: string | null;
   priceAmount: string | null;
   priceCurrency: string | null;
+  sku: string | null;
+  color: string | null;
+  size: string | null;
 }
 
 function firstString(value: unknown): string | null {
@@ -24,7 +27,7 @@ function firstString(value: unknown): string | null {
 }
 
 export function extractJsonLdProduct(doc: Document): JsonLdProductData | null {
-  const node = findProductNode(readJsonLd(doc));
+  const node = findProductNode(readJsonLd(doc), doc.URL);
 
   if (node === null) {
     return null;
@@ -37,6 +40,9 @@ export function extractJsonLdProduct(doc: Document): JsonLdProductData | null {
   }
 
   const imageUrl = firstString(node["image"]);
+  const sku = firstString(node["sku"]);
+  const color = firstString(node["color"]);
+  const size = firstString(node["size"]);
   const offers = node["offers"];
 
   let priceAmount: string | null = null;
@@ -60,5 +66,8 @@ export function extractJsonLdProduct(doc: Document): JsonLdProductData | null {
     imageUrl,
     priceAmount,
     priceCurrency,
+    sku,
+    color,
+    size,
   };
 }
