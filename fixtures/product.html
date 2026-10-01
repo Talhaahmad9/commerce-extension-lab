@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Product fixture</title>
+
+    <style>
+      body {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        font-family: system-ui, sans-serif;
+        color: #172033;
+        background: #f8fafc;
+      }
+
+      header,
+      main {
+        padding: 24px;
+        margin-bottom: 24px;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        background: white;
+      }
+
+      button,
+      select {
+        padding: 10px;
+        margin: 4px;
+        font: inherit;
+      }
+
+      img {
+        width: 180px;
+        height: 180px;
+      }
+
+      #price {
+        font-size: 24px;
+        font-weight: bold;
+      }
+    </style>
+
+    <script id="product-data" type="application/ld+json"></script>
+  </head>
+
+  <body>
+    <header>
+      <p>Local product test page</p>
+
+      <label>
+        Selected shade:
+        <select id="shade">
+          <option value="1001">Rose</option>
+          <option value="1002">Plum</option>
+        </select>
+      </label>
+
+      <div>
+        <button type="button" data-mode="normal">Normal</button>
+        <button type="button" data-mode="conflict">Price conflict</button>
+        <button type="button" data-mode="structured">JSON-LD only</button>
+        <button type="button" data-mode="malformed">Malformed JSON-LD</button>
+        <button type="button" data-mode="empty">No product</button>
+        <button type="button" data-mode="text">HTML-looking title</button>
+      </div>
+
+      <p id="mode-status"></p>
+    </header>
+
+    <main id="product"></main>
+
+    <script>
+      const variants = {
+        "1001": {
+          color: "Rose",
+          size: "0.5 oz / 15 g",
+          price: "24.00",
+          fill: "#be667a",
+        },
+        "1002": {
+          color: "Plum",
+          size: "1 oz / 30 g",
+          price: "28.00",
+          fill: "#704070",
+        },
+      };
+
+      const shadeSelect = document.querySelector("#shade");
+      const product = document.querySelector("#product");
+      const productData = document.querySelector("#product-data");
+      const modeStatus = document.querySelector("#mode-status");
+
+      let mode = "normal";
+
+      const initialSku = new URL(location.href).searchParams.get("skuId");
+
+      if (initialSku && variants[initialSku]) {
+        shadeSelect.value = initialSku;
+      }
+
+      function makeImage(fill) {
+        const svg =
+          `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">` +
+          `<rect width="180" height="180" rx="20" fill="${fill}"/>` +
+          `</svg>`;
+
+        return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+      }
+
+      function makeElement(tag, text) {
+        const element = document.createElement(tag);
+        element.textContent = text;
+        return element;
+      }
+
+      function structuredVariant(sku, value) {
+        return {
+          "@type": "Product",
+          name: `Fixture Lip Balm - ${value.color}`,
+          sku,
+          color: value.color,
+          size: value.size,
+          image: makeImage(value.fill),
+          offers: {
+            "@type": "Offer",
+            price: value.price,
+            priceCurrency: "USD",
+          },
+        };
+      }
+
+      function render() {
+        const sku = shadeSelect.value;
+        const selected = variants[sku];
+
+        const url = new URL(location.href);
+        url.searchParams.set("skuId", sku);
+        history.replaceState(null, "", url);
+
+        document.title = `Fixture Lip Balm - ${selected.color}`;
+        modeStatus.textContent = `Current test: ${mode}`;
+
+        const group = {
+          "@context": "https://schema.org",
+          "@type": "ProductGroup",
+          name: "Fixture Lip Balm",
+          productGroupID: "fixture-balm",
+          variesBy: ["color", "size"],
+          hasVariant: Object.entries(variants).map(([id, value]) =>
+            structuredVariant(id, value),
+          ),
+        };
+
+        productData.textContent = JSON.stringify(group);
+        product.replaceChildren();
+
+        if (mode === "empty") {
+          productData.textContent = "";
+          product.append(makeElement("h1", "This is not a product page"));
+          return;
+        }
+
+        if (mode === "structured") {
+          product.append(
+            makeElement("p", "Product details exist only in JSON-LD."),
+          );
+          return;
+        }
+
+        const title =
+          mode === "text"
+            ? '<img src=x onerror="alert(1)"> Fixture Lip Balm'
+            : "Fixture Lip Balm";
+
+        product.append(makeElement("h1", title));
+
+        const price = makeElement(
+          "p",
+          mode === "conflict" ? "56 USD" : `$${selected.price}`,
+        );
+        price.id = "price";
+        product.append(price);
+
+        product.append(makeElement("p", `Color: ${selected.color}`));
+        product.append(makeElement("p", `Size ${selected.size}`));
+
+        const image = document.createElement("img");
+        image.alt = "Fixture Lip Balm";
+        image.src = makeImage(selected.fill);
+        product.append(image);
+
+        if (mode === "malformed") {
+          productData.textContent = "{ invalid JSON";
+        }
+      }
+
+      shadeSelect.addEventListener("change", render);
+
+      for (const button of document.querySelectorAll("[data-mode]")) {
+        button.addEventListener("click", () => {
+          mode = button.dataset.mode;
+          render();
+        });
+      }
+
+      render();
+    </script>
+  </body>
+</html>

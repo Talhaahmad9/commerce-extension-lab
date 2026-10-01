@@ -382,7 +382,7 @@ function App() {
 
             {product.variant !== null && (
               <div className="rounded border border-slate-200 p-3">
-                <p className="font-medium">Selected variant</p>
+                <p className="font-medium">Product details</p>
                 <p>SKU: {product.variant.sku ?? "Not found"}</p>
                 <p>Shade/color: {product.variant.color ?? "Not found"}</p>
                 <p>Size: {product.variant.size ?? "Not found"}</p>

@@ -15,7 +15,8 @@
         "https://testingurl.dev/scraping/ecommerce/product/*",
         "https://testingurl.dev/scraping/structured-data/product-microdata",
         "https://www.sephora.com/product/*",
-        "https://jenpharm.com/products/*"
+        "https://jenpharm.com/products/*",
+        "http://127.0.0.1/fixtures/*"
       ],
       "js": ["content.js"]
     }

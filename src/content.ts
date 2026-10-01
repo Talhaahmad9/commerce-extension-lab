@@ -1,4 +1,4 @@
-import { extractProduct } from "./extractProduct";
+import { readProduct } from "./readProduct";
 import { observePageChanges } from "./observePageChanges";
 import type {
   PageInfoResponse,
@@ -60,13 +60,24 @@ chrome.runtime.onMessage.addListener(
         });
       }
 
-      const response: ProductResponse = {
-        type: "PRODUCT_RESULT",
-        product: extractProduct(document),
-      };
+      void readProduct(document)
+        .then((product) => {
+          const response: ProductResponse = {
+            type: "PRODUCT_RESULT",
+            product,
+          };
 
-      sendResponse(response);
-      return false;
+          sendResponse(response);
+        })
+        .catch((error: unknown) => {
+          console.error("Product inspection failed:", error);
+
+          sendResponse({
+            type: "PRODUCT_ERROR",
+          });
+        });
+
+      return true;
     }
 
     return false;
